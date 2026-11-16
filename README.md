@@ -1,0 +1,1 @@
+DMS is a personal learning project from FoPa Labs: a minimal document management system with hybrid RAG search and an agentic assistant, built to explore ASP.NET Core and local embeddings. It is not a commercial product.
