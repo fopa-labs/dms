@@ -185,6 +185,7 @@ dotnet ef migrations add <Name> --project src/Dms.Infrastructure --startup-proje
 ## References
 
 - `docs/planning/spec.hu.md`: full specification (Hungarian) — source of truth for design decisions
+- `docs/planning/sprints.hu.md`: sprint plan (Hungarian); GitHub issues and milestones track execution
 - `docs/architecture.md`: architecture overview (English summary)
 - `docs/adr/`: decisions and their reasons
 - Milestones and sprints: GitHub milestones and issues
