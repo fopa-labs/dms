@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Central Package Management: every package version is pinned here, project files reference
+    packages without a version. New dependencies need approval (see CLAUDE.md); prefer MIT,
+    Apache-2.0 or BSD licenses, never AGPL/GPL.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Transitive dependencies resolve to the versions pinned here, so a vulnerable transitive
+         package can be upgraded in one place. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+
+</Project>
