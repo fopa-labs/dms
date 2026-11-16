@@ -56,10 +56,12 @@ Minden komponens C#: az API kiszolgálja a DMS-t, a keresést és az agentet; a 
 
 A Postgres az egyetlen tár: a relációs adatok, a teljes szöveges index és a vektorok (pgvector) is itt vannak, ezért minden írás egy tranzakcióban történhet. A sémát EF Core migrációk kezelik. Minden azonosító UUID (v7, időrendezett).
 
+**Séma mérföldkövenként:** minden tábla abban a mérföldkőben jön létre, saját migrációval, amelyik először használja; így a később tervezett részek (feladatsor, blokkmodell, darabolás) szerkezetét nem rögzíti előre egy korai migráció. M0: `collection`, `document`, `document_version`, `tag`, `document_tag`, `audit_log` és az Identity-táblák, valamint a `vector` és `pg_trgm` bővítmény. M2: `job`, `page`, `page_label`, `block`, `chunk`, `chunk_code`, `section_link`. M3: `eval_case`, `eval_run`. M4: `chunk.embedding` és a HNSW-index. M5: `conversation`, `message`. M7: `vehicle`, `service_log`.
+
 | Tábla | Kulcsmezők | Megjegyzés |
 | --- | --- | --- |
 | `collection` | `id`, `slug`, `name`, `description`, `lang`, `ts_config` | A `description` az agent `list_collections` szövege; `ts_config` = `english` / `hungarian` |
-| `document` | `id`, `collection_id`, `title`, `active_version_id`, `metadata jsonb`, `deleted_at` | DMS-entitás; puha törlés |
+| `document` | `id`, `collection_id`, `title`, `active_version_id`, `metadata jsonb`, `created_at`, `updated_at`, `deleted_at` | DMS-entitás; puha törlés; az `(updated_at, id)` páros a kurzoros lapozás kulcsa |
 | `document_version` | `id`, `document_id`, `version_no`, `blob_sha256`, `file_name`, `size_bytes`, `page_count`, `status`, `error`, `uploaded_at`, outline jsonb, run\_id, pending\_jobs | `status`: queued / processing / indexed / failed; outline = könyvjelzőfa szakaszlistaként; run\_id = aktuális feldolgozási futás; pending\_jobs = az aktuális lépés befejezetlen jobjai |
 | `tag`, `document_tag` | `id`, `name`; `document_id`, `tag_id` | Címkézés |
 | `job` | `id`, `type`, `version_id`, `run_id`, `payload jsonb`, `status`, `priority`, `attempts`, `max_attempts`, `run_after`, `locked_by`, `locked_until`, `last_error`, `created_at`, `started_at`, `finished_at` | Feldolgozó feladatsor, `FOR UPDATE SKIP LOCKED`; állapotok: queued / running / done / failed / dead / cancelled; részleges index `(priority, run_after) WHERE status = 'queued'` |
@@ -117,7 +119,7 @@ A rendszer általános dokumentumkezelésre készül, a Mazda-kézikönyv csak a
 
 - **OCR oldalanként dönt:** vegyes PDF-ben csak a `scanned` oldalak mennek OCR-re; az eredmény ugyanabba az egységes modellbe kerül, mint a szövegréteg.
 - **Gyűjteményenkénti beállítás:** melyik chunker és melyik enricher fut, és milyen nyelvű az OCR.
-- **Adatmodell-kiegészítés:** `document_version.mime_type`, `page.extraction` (text\_layer / ocr), `page.ocr_confidence`, `document.lang` (automatikus nyelvfelismeréssel); ezek már az M0-s sémába bekerülnek.
+- **Adatmodell-kiegészítés:** `document_version.mime_type`, `page.extraction` (text\_layer / ocr), `page.ocr_confidence`, `document.lang` (automatikus nyelvfelismeréssel). A `document_version.mime_type` és a `document.lang` már az M0-s sémába bekerül; a `page`-mezők a `page` táblával együtt az M2-ben.
 
 ### Egységes blokkmodell
 
@@ -487,7 +489,7 @@ A repó célja, hogy éles rendszerre alkalmas mérnöki szemléletet mutasson, 
 
 Minden mérföldkő végén van egy működő, mérhető állapot; a sorrend azért ilyen, hogy minden lépés hatása külön látszódjon.
 
-1. **M0 – Váz:** Aspire AppHost, API + Worker projekt, EF Core séma migrációval, Identity, egy integrációs teszt Testcontainers-szel.
+1. **M0 – Váz:** Aspire AppHost, API + Worker projekt, EF Core séma migrációval (DMS-mag táblák és Identity), Identity, egy integrációs teszt Testcontainers-szel.
 2. **M1 – DMS-mag:** gyűjtemények, streaming feltöltés, blobtár, verziók, címkék, audit, dokumentumlista a UI-on.
 3. **M2 – Feldolgozás:** `job`-sor, a pipeline-interfészek, PdfPig-kinyerés (előtte minőségellenőrzés egy 50 oldalas mintán), osztályozás, renderelés, könyvjelző-alapú darabolás, Mazda-enricher; állapot a UI-on.
 4. **M3 – Eval-készlet + lexikális keresés:** 30–50 kérdés, kódkeresés + `tsvector`, keresőmező a UI-on; Recall@10 alapvonal.
@@ -521,5 +523,6 @@ Minden korábbi nyitott kérdés eldőlt; a következmények a megfelelő szakas
 | .NET-verzió | .NET 10 (LTS) + hozzá tartozó Aspire | Hosszú támogatás; az SSE és a minimal API legújabb funkciói elérhetők |
 | Blobtár helye | Helyi lemez a Proxmoxon | Gyors feldolgozás, nincs függés a NAS elérhetőségétől; napi mentés a NAS-ra |
 | Verziók és indexelés | Csak az aktív verzió indexelt | A keresés SQL-ben az aktív verzióra szűr; a régi verziók adatai és vektorai megmaradnak, így a visszaállás azonnali |
+| Séma ütemezése | Táblák mérföldkövenként, az első használatukkal együtt | Az M0 csak a DMS-mag és az Identity tábláit hozza létre; a `job`, `page`, `block` és `chunk` az M2-ben, a saját tervezésükkel együtt (lásd Adatmodell) |
 | Repó és CI | Nyilvános GitHub-repó + GitHub Actions | Solution: Api, Worker, Core, Infrastructure, AppHost, Tests; minden push-ra build és tesztek Testcontainers-szel |
 | Vektortár | pgvector a Postgresben (Qdrant helyett) | Egy tár, tranzakciós konzisztencia, SQL-szűrés az aktív verzióra; nincs két tár közötti szinkron, takarítás és egyeztetés. IVectorIndex interfész mögött; Qdrant opcionális összevetésként az M4-ben |
