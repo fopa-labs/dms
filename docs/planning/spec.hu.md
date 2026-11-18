@@ -279,6 +279,22 @@ RETURNING job.*;
 
 **Tervezett leállítás:** leállítási jelzésre (SIGTERM) a Worker nem vesz fel új jobot, a futókat legfeljebb 60 másodpercig (`HostOptions.ShutdownTimeout`) hagyja befejeződni. Ami ennyi idő alatt nem végez, annak a bérletét feladja: `status = 'queued'`, `locked_until = NULL`, `run_after = now()`, `attempts = attempts - 1`, feltételesen (`locked_by = @worker`). A tervezett leállítás nem hiba, ezért nem fogyaszt próbálkozást, és egy másik Worker azonnal folytathatja, nem kell a bérlet lejáratára várni.
 
+### Méltányosság, skálázás, időszakos feladatok
+
+- **Verziónkénti párhuzamossági korlát:** egy verzióból job-típusonként egyszerre legfeljebb N (kezdetben 8) job fut, hogy egy óriási dokumentum ne foglalja le az összes Workert egy kicsi elől. A felvételi lekérdezés feltétele: a jelölt verziójának azonos típusú `running` jobjai kevesebben vannak N-nél. Puha korlát: két egyidejű felvétel egyszer túllépheti eggyel, ez elfogadható.
+- **Adatbázis-kapcsolatok:** a ciklusok csak a tranzakció idejére fognak kapcsolatot (Npgsql-pool); a poolméretek összege (Workerek × ciklusok + API + `LISTEN` kapcsolatok) maradjon a `max_connections` alatt; nagy skálán PgBouncer.
+- **Távoli Worker blob-gyorsítótára:** a hálózaton elért blobot az első használatkor helyben gyorsítótárazza; a SHA-256 tartalomcímzés miatt a helyi másolat érvényessége egyszerűen ellenőrizhető.
+- **Mérés az S5-ben:** a legnagyobb PDF-en jobonként a PdfPig nyitási ideje és memóriaigénye; ebből dől el a csomagméret és a ciklusok száma.
+
+| Időszakos feladat | Gyakoriság | Mit csinál |
+| --- | --- | --- |
+| Bérlet-visszaszerzés | 30 mp | lejárt bérletű `running` jobok `queued`-ba vagy `dead`-be |
+| Job-takarítás | naponta | 30 napnál régebbi `done` jobok törlése |
+| Árva blobok takarítása | naponta | hivatkozás nélküli blobfájlok törlése türelmi idő után |
+| Árva oldalképek takarítása | naponta | törölt verziók `pages/` fájljainak törlése |
+
+Minden időszakos feladat egy Postgres advisory lockkal (`pg_try_advisory_lock`) indul: ha egy másik Worker-példány már tartja, ez a példány kihagyja a kört. Így több Worker esetén is egyszerre csak egy fut.
+
 ### Értesítések (LISTEN/NOTIFY)
 
 A Workerek egymással nem kommunikálnak, az API és a Worker között pedig a Postgres `LISTEN/NOTIFY` viszi a jelzéseket. Az értesítés csak jelzés, nem adat: az igazság mindig a táblákban van.
