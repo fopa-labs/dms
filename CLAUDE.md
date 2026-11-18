@@ -174,7 +174,9 @@ namespaces, assembly names or identifiers.
 dotnet build
 dotnet test
 dotnet run --project src/Dms.AppHost      # whole stack with dashboard
-dotnet ef migrations add <Name> --project src/Dms.Infrastructure --startup-project src/Dms.Api
+dotnet tool restore                       # dotnet-ef from the local tool manifest
+dotnet ef migrations add <Name> --project src/Dms.Infrastructure --startup-project src/Dms.Infrastructure \
+  --output-dir Persistence/Migrations     # design-time factory: DmsDbContextFactory
 ```
 
 ## Workflow
