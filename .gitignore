@@ -486,3 +486,7 @@ pages/
 models/
 .env
 .idea/
+
+# Local environment variants; keep a committed template only
+.env.*
+!.env.example
