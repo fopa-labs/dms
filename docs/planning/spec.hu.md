@@ -52,6 +52,41 @@ A fájlok tartalomcímzett tárban (`blobs/ab/cd/<sha256>`) állnak, egy `IBlobS
 
 Minden komponens C#: az API kiszolgálja a DMS-t, a keresést és az agentet; a külön folyamatként futó Worker a `job`-sorból dolgozza fel a feltöltött verziókat. A lekérdezés- és a dokumentum-embedding ugyanazzal a helyi ONNX-modellel készül.
 
+## Szakterületi csomagok (domain pack)
+
+Az alaprendszer szakterület-független; minden szakterületi tudás gyűjteményenként választható csomagban van. Egy gyűjteményhez legfeljebb egy csomag tartozik; csomag nélkül az általános viselkedés érvényes. A Mazda-kézikönyv gyűjteménye az autós csomagot használja, a demo-korpusz és az általános dokumentumok alapból csomag nélkül futnak.
+
+| Elem | Mit ad a csomag | Csomag nélkül |
+| --- | --- | --- |
+| Darabolás | chunker és paraméterei | könyvjelző-alapú, ha van könyvjelző; az M8-tól címsor- vagy tokenalapú |
+| Enricherek | kódkinyerők (pl. DTC) | nincs; a kódág üres |
+| Oldalosztályozó | küszöbértékek | alapértékek |
+| Kereszthivatkozások | hivatkozásminták | csak a könyvjelzőcímek egyezése |
+| Agent-utasítás | szakterületi rész (munkafolyamat, figyelmeztetések) | csak az általános rész (hivatkozás, nem megbízható tartalom) |
+| Agent-eszközök | extra eszközök | csak az általános eszközök |
+| Adatok | saját táblák saját sémában, saját migrációval | — |
+| Eval | saját kérdéskészlet | — |
+
+```csharp
+public interface IDomainPack
+{
+    string Id { get; }                                   // pl. "automotive"
+    ChunkingOptions? Chunking { get; }
+    IReadOnlyList<IEnricher> Enrichers { get; }
+    ClassifierThresholds? Classifier { get; }
+    IReadOnlyList<ReferencePattern> ReferencePatterns { get; }
+    string? AgentInstructions { get; }                   // a rendszerutasítás szakterületi része
+    IReadOnlyList<IAgentTool> Tools { get; }
+}
+```
+
+- **Kiválasztás:** a `collection.domain_pack` mező választ; a `collection.settings jsonb` gyűjteményszintű felülírásokat tartalmaz. A csomagok DI-ben regisztrálódnak (`services.AddDomainPack<AutomotivePack>()`).
+- **Projektstruktúra:** `src/Packs/Dms.Packs.Automotive`; a `Core`-ra hivatkozik, a `Core` és az `Infrastructure` nem hivatkozik rá (architektúra-teszt).
+- **Adatok:** a csomag saját PostgreSQL-sémában (`automotive.vehicle`, `automotive.service_log`), saját EF Core `DbContext`-tel és migrációval; az alapséma nem tud róla.
+- **Agent:** rendszerutasítás = általános rész + az aktuális gyűjtemény csomagjának része; eszközlista = általános eszközök + a csomag eszközei.
+- **Autós csomag:** DTC-, csatlakozó-, alkatrész- és nyomaték-enricher, Mazda-hivatkozásminták, diagnosztikai munkafolyamat és biztonsági figyelmeztetések, `vehicle_profile`, `log_service`, `parse_obd_log`, járműtáblák.
+- **Időzítés:** az interfész és a gyűjteménymezők az S1 sémájában; az enricherek az S6-ban már a csomagon át futnak; az agent-utasítás és az eszközlista összeállítása az M5-ben; a teljes autós csomag az M7-ben.
+
 ## Adatmodell (PostgreSQL, EF Core)
 
 A Postgres az egyetlen tár: a relációs adatok, a teljes szöveges index és a vektorok (pgvector) is itt vannak, ezért minden írás egy tranzakcióban történhet. A sémát EF Core migrációk kezelik. Minden azonosító UUID (v7, időrendezett).
@@ -60,7 +95,7 @@ A Postgres az egyetlen tár: a relációs adatok, a teljes szöveges index és a
 
 | Tábla | Kulcsmezők | Megjegyzés |
 | --- | --- | --- |
-| `collection` | `id`, `slug`, `name`, `description`, `lang`, `ts_config` | A `description` az agent `list_collections` szövege; `ts_config` = `english` / `hungarian` |
+| `collection` | `id`, `slug`, `name`, `description`, `lang`, `ts_config`, `domain_pack`, `settings jsonb` | A `description` az agent `list_collections` szövege; `ts_config` = `english` / `hungarian`; `domain_pack` = a gyűjtemény szakterületi csomagja (NULL = nincs) |
 | `document` | `id`, `collection_id`, `title`, `active_version_id`, `metadata jsonb`, `created_at`, `updated_at`, `deleted_at` | DMS-entitás; puha törlés; az `(updated_at, id)` páros a kurzoros lapozás kulcsa |
 | `document_version` | `id`, `document_id`, `version_no`, `blob_sha256`, `file_name`, `size_bytes`, `page_count`, `status`, `error`, `uploaded_at`, outline jsonb, run\_id, pending\_jobs | `status`: queued / processing / indexed / failed; outline = könyvjelzőfa szakaszlistaként; run\_id = aktuális feldolgozási futás; pending\_jobs = az aktuális lépés befejezetlen jobjai |
 | `tag`, `document_tag` | `id`, `name`; `document_id`, `tag_id` | Címkézés |
@@ -72,7 +107,7 @@ A Postgres az egyetlen tár: a relációs adatok, a teljes szöveges index és a
 | `chunk` | `id`, `version_id`, collection\_id, active, `page_from`, `page_to`, `section_path`, `kind`, `text`, `seq`, `tsv`, `meta jsonb`, `embedding vector(768), embedding_model`, `indexed_at` | `tsv` generált oszlop; `indexed_at` NULL = még nincs vektora |
 | `chunk_code` | `chunk_id`, `code_type`, `code` | dtc / connector / part / torque, pontos egyezéshez |
 | `section_link` | `from_chunk`, `to_chunk`, `link_type` | Rajz ↔ csatlakozónézet ↔ eljárás |
-| `vehicle`, `service_log` | járműadatok; dátum, km, művelet, eredmény | Járműkontextus az agentnek |
+| `vehicle`, `service_log` | járműadatok; dátum, km, művelet, eredmény | Járműkontextus az agentnek; az autós csomag saját sémájában (automotive), nem az alapsémában |
 | `conversation`, `message` | `id`, `vehicle_id`, `role`, `content jsonb`, `usage jsonb` | Teljes agent-transzkript, tokenhasználattal |
 | `eval_case`, `eval_run` | kérdés, gyűjtemény, elvárt oldalak; konfiguráció és eredmény | Kiértékelés |
 
@@ -208,7 +243,7 @@ Minden job ugyanazt a kört járja: felvétel → feldolgozás tranzakción kív
 
 ### Job-állapotgép
 
-*(Állapotgép-ábra a specifikáció online változatában.)* Átmenetek: queued → running (felvétel); running → queued (átmeneti hiba vagy lejárt bérlet, ha maradt próba); running → done / failed (végleges hiba) / dead (elfogytak a próbák); queued vagy running → cancelled (elavult run_id vagy törlés).
+*(Állapotgép-ábra a specifikáció online változatában.)* Átmenetek: queued → running (felvétel); running → queued (átmeneti hiba vagy lejárt bérlet, ha maradt próba); running → done / failed (végleges hiba) / dead (elfogytak a próbák); queued vagy running → cancelled (elavult run_id vagy törlés); running → queued tervezett leállításkor (a próba nem számít).
 
 A `failed`, a `dead` és a `cancelled` végleges. A `failed` és a `dead` a verziót is `failed`-re állítja hibaüzenettel, a futás többi jobja pedig `cancelled` lesz. A `cancelled` csendes: egy újabb futás vagy egy törlés miatt a job már nem kell.
 
@@ -235,12 +270,25 @@ RETURNING job.*;
 | Heartbeat | 60 mp | A bérletidő ötöde; egy-két kimaradó heartbeat sem okoz bérletvesztést |
 | `max_attempts` | 5 | A lejárt bérlet is próbálkozásnak számít, így egy mindig összeomló job sem pörög végtelenségig |
 | Újrapróbálási várakozás | `min(30 mp · 2^(próba−1), 30 perc)` ± 20% | Exponenciális visszalépés; a véletlen eltérés miatt nem egyszerre próbálkozik minden job |
-| Lekérdezés üres sornál | 1 mp-től fokozatosan 5 mp-ig | Üresjáratban alig terheli az adatbázist; a `LISTEN/NOTIFY` későbbi, külön lépés |
+| Lekérdezés üres sornál | 1 mp-től fokozatosan 5 mp-ig | Üresjáratban alig terheli az adatbázist; tartalék; az ébresztés `LISTEN/NOTIFY`-jal történik |
 | Lejárt bérletek visszaszerzése | 30 mp-enként | Van még próba: `queued`; nincs: `dead` |
 | Prioritás | `finalize`, `chunk`, `register` > `embed` > `extract` | Az elkezdett dokumentumok előbb végeznek, mielőtt új nehéz munka indulna |
 | Megőrzés | `done`: 30 nap; `failed`, `dead`, `cancelled`: megmarad | Hibakereséshez |
 
 **Hibaosztályozás:** alapból minden hiba átmeneti. Végleges hibát egy saját `PermanentJobException` jelez (titkosított PDF, oldalkorlát, ONNX-bemeneti hiba); az Npgsql-hibáknál az `IsTransient` dönt.
+
+**Tervezett leállítás:** leállítási jelzésre (SIGTERM) a Worker nem vesz fel új jobot, a futókat legfeljebb 60 másodpercig (`HostOptions.ShutdownTimeout`) hagyja befejeződni. Ami ennyi idő alatt nem végez, annak a bérletét feladja: `status = 'queued'`, `locked_until = NULL`, `run_after = now()`, `attempts = attempts - 1`, feltételesen (`locked_by = @worker`). A tervezett leállítás nem hiba, ezért nem fogyaszt próbálkozást, és egy másik Worker azonnal folytathatja, nem kell a bérlet lejáratára várni.
+
+### Értesítések (LISTEN/NOTIFY)
+
+A Workerek egymással nem kommunikálnak, az API és a Worker között pedig a Postgres `LISTEN/NOTIFY` viszi a jelzéseket. Az értesítés csak jelzés, nem adat: az igazság mindig a táblákban van.
+
+- **Csatornák:** `version_progress` (`{versionId, status, stage, done, total}`, illetve `failed` / `indexed` esemény) és `job_available` (a job típusa).
+- **Küldés:** a Worker a lezáró tranzakcióban hívja a `pg_notify('version_progress', …)`-t, új job beszúrásakor ugyanabban a tranzakcióban a `pg_notify('job_available', …)`-t. A Postgres csak sikeres commit után kézbesít, így visszagörgetett állapotról nem megy értesítés.
+- **API:** egy háttérszolgáltatás egy dedikált (nem poolozott) kapcsolaton `LISTEN version_progress`, Npgsql `WaitAsync`-kel. A beérkező értesítéseket egy folyamaton belüli elosztó adja tovább a nyitott SSE-kapcsolatoknak (kapcsolatonként egy `Channel<T>`, verzióazonosító szerint szűrve).
+- **Worker ébresztése:** `LISTEN job_available`; értesítésre azonnal próbál jobot felvenni. A lekérdezés (1 → 5 mp) tartalék marad, mert a kapcsolatszakadás alatt küldött értesítés elvész.
+- **Újracsatlakozás:** az SSE-kapcsolat és a hallgató kapcsolat újraépítésekor a pillanatnyi állapot a táblából olvasódik, így az elveszett értesítés nem okoz eltérést.
+- **Korlát:** a payload legfeljebb kb. 8000 bájt; csak azonosítók és számok kerülnek bele. Több API-példánynál mindegyik saját hallgatót tart.
 
 ### Verzióváltás, visszaállás, törlés
 
@@ -496,7 +544,7 @@ Minden mérföldkő végén van egy működő, mérhető állapot; a sorrend az�
 5. **M4 – Embedding:** ONNX-pipeline saját tokenizálással és poolinggal, pgvector HNSW-index, RRF; modell- és chunkméret-kísérletek mérve; opcionálisan Qdrant-összevetés az `IVectorIndex` mögött.
 6. **M5 – Agent:** saját C# tool-use ciklus, keresőeszközök, SSE, chat-nézet.
 7. **M6 – Ábrák:** `get_page_image` kiemeléssel, ábralerírás, `render_diagram`.
-8. **M7 – Járműkontextus:** járműprofil, szervizelőzmény, OBD-log elemzés.
+8. **M7 – Autós domain pack:** járműprofil, szervizelőzmény, OBD-log elemzés.
 9. **M8 – Általános dokumentumok:** `IOcrEngine` Tesseracttal (oldalanként, vegyes PDF-re is), képfájlok, DOCX/XLSX/HTML/EML-kinyerők, címsor-alapú és tokenszám-alapú chunker, nyelvfelismerés; eval-készlet vegyes dokumentumokra.
 10. **M9 – Második szakmai gyűjtemény:** évkönyvek (az M8 OCR-jére épülve), magyar `ts_config`, gyűjteményválasztás az agentben.
 11. **M10 – Opcionális: kapcsolási rajzok topológiája.** Vektoros rajzokból bekötési gráf (netlist): vonalszakaszok összefűzése, csomópontok felismerése (keresztés vs. elágazási pont), feliratok hozzárendelése a vonalvégekhez, oldalak közötti folytatások összekötése. Kimenet: `wire_node` / `wire_edge` táblák és egy `trace_circuit` agent-eszköz. Kezdés egyetlen rajzon, kézzel ellenőrzött bekötéssel mérve.
