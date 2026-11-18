@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dms.Core\Dms.Core.csproj" />
     <ProjectReference Include="..\Dms.Infrastructure\Dms.Infrastructure.csproj" />
+    <ProjectReference Include="..\Dms.ServiceDefaults\Dms.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

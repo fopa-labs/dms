@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dms.Core\Dms.Core.csproj" />
+    <ProjectReference Include="..\..\src\Dms.Infrastructure\Dms.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Packs\Dms.Packs.Automotive\Dms.Packs.Automotive.csproj" />
   </ItemGroup>
 

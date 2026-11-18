@@ -46,6 +46,7 @@ flowchart LR
 | `Packs/Dms.Packs.*` | Domain packs (see below) | `Core` |
 | `Dms.Api` | HTTP API | `Core`, `Infrastructure`, `ServiceDefaults` |
 | `Dms.Worker` | Job processing | `Core`, `Infrastructure`, `ServiceDefaults` |
+| `Dms.MigrationService` | Applies EF Core migrations once, before Api and Worker start | `Core`, `Infrastructure`, `ServiceDefaults` |
 | `Dms.ServiceDefaults` | OpenTelemetry, health checks, resilience defaults | — |
 | `Dms.AppHost` | .NET Aspire orchestration for local development | the runnable projects |
 
