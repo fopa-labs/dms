@@ -27,9 +27,11 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <!-- Test projects are never packed. -->
+  <!-- Test projects are never packed. xUnit v3 test projects are executables: they run on
+       Microsoft.Testing.Platform (selected in global.json) and host their own test runner. -->
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
 </Project>

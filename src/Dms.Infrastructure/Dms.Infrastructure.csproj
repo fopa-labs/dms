@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dms.Core\Dms.Core.csproj" />
+  </ItemGroup>
+
+</Project>

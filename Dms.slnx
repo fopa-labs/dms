@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dms.Api/Dms.Api.csproj" />
+    <Project Path="src/Dms.Core/Dms.Core.csproj" />
+    <Project Path="src/Dms.Infrastructure/Dms.Infrastructure.csproj" />
+    <Project Path="src/Dms.Worker/Dms.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Packs/">
+    <Project Path="src/Packs/Dms.Packs.Automotive/Dms.Packs.Automotive.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Dms.ArchitectureTests/Dms.ArchitectureTests.csproj" />
+    <Project Path="tests/Dms.IntegrationTests/Dms.IntegrationTests.csproj" />
+    <Project Path="tests/Dms.UnitTests/Dms.UnitTests.csproj" />
+  </Folder>
+</Solution>

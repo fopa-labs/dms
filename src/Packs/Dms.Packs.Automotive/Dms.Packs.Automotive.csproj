@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Automotive domain pack. References Core only; Core and Infrastructure never reference a pack. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dms.Core\Dms.Core.csproj" />
+  </ItemGroup>
+
+</Project>
