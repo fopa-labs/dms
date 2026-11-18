@@ -78,6 +78,9 @@ src/
   Dms.Worker/             Worker Service: job queue and processing pipeline
   Dms.Core/               Domain model, interfaces, pure logic (no I/O dependencies)
   Dms.Infrastructure/     EF Core + pgvector, blob store, PDF, ONNX, LLM clients
+  Packs/
+    Dms.Packs.Automotive/ Automotive domain pack: enrichers, agent instructions and tools,
+                          vehicle data in its own schema and DbContext
 tests/
   Dms.UnitTests/
   Dms.IntegrationTests/   Testcontainers (PostgreSQL + pgvector)
@@ -98,6 +101,8 @@ namespaces, assembly names or identifiers.
 - `Core` references nothing else in the solution and no infrastructure packages
   (no EF Core, no Npgsql, no pgvector, no ONNX).
 - `Infrastructure` references `Core` only.
+- Domain packs (`src/Packs/*`) reference `Core` only; `Core` and `Infrastructure` never
+  reference a pack.
 - `Api` and `Worker` reference `Core`, `Infrastructure` and `ServiceDefaults`.
 - `Api` and `Worker` never reference each other; they communicate through the database (`job` table).
 
@@ -117,6 +122,17 @@ namespaces, assembly names or identifiers.
 - Large data is streamed: no buffering of whole uploads or whole PDFs in memory.
 - Keep it pragmatic: no MediatR, no CQRS, no repository-per-entity layer on top of EF Core.
   Propose an ADR if you think a pattern is needed.
+
+## Domain packs
+
+- The core system is domain-agnostic. Anything specific to a domain (car repair codes, diagnostic
+  workflow, vehicle data) lives in a domain pack implementing `IDomainPack`, never in `Core`,
+  `Infrastructure`, `Api` or `Worker`.
+- A collection selects at most one pack (`collection.domain_pack`); without a pack the general
+  behaviour applies and must work end to end (the demo corpus runs without a pack).
+- A pack owns its tables in its own PostgreSQL schema with its own `DbContext` and migrations.
+- The agent's system prompt = general part + the collection's pack part; tools = general tools +
+  the pack's tools.
 
 ## Database
 
@@ -179,7 +195,10 @@ dotnet ef migrations add <Name> --project src/Dms.Infrastructure --startup-proje
 - **Page kind**: `text`, `table`, `diagram`, `image`, `scanned` (from the page classifier).
 - **Block**: unit of the unified extraction model (text, table, figure) with coordinates.
 - **Chunk**: retrieval unit built from blocks; stored in PostgreSQL with its embedding (pgvector).
-- **Enricher**: collection-specific extraction (e.g. DTC codes, connectors, torque values).
+- **Enricher**: domain-specific extraction (e.g. DTC codes, connectors, torque values), provided
+  by a domain pack.
+- **Domain pack**: per-collection bundle of domain knowledge: chunking options, enrichers,
+  classifier thresholds, reference patterns, agent instructions and tools, own data schema.
 - **Eval set**: questions with known correct pages, used to measure retrieval changes.
 
 ## References

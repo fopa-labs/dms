@@ -13,7 +13,7 @@ Kéthetes sprintek, sprintenként kb. 25 munkaóra (heti 12–13 óra). Az M0–
 | M4 – Embedding | S9–S11 |
 | M5 – Agent | S12–S14 — **interjúkész állapot** |
 | M6 – Ábrák | S15–S16 |
-| M7 – Járműkontextus | S17 |
+| M7 – Autós domain pack | S17 |
 | M8 – Általános dokumentumok | S18–S21 |
 | M9 – Évkönyvek | S22–S23 |
 | M10 – Bekötési gráf (opcionális) | S24+ |
@@ -22,7 +22,7 @@ Kéthetes sprintek, sprintenként kb. 25 munkaóra (heti 12–13 óra). Az M0–
 
 | Sprint | Cél | Feladatok | Kész, ha |
 | --- | --- | --- | --- |
-| S1 | Váz, minőségi alapok | Solution-struktúra, `Directory.Build.props`, analyzerek, Central Package Management, `.editorconfig` (AI) · Aspire AppHost pgvectoros Postgresszel (AI) · GitHub Actions build, secret scanning, `.gitignore` (AI) · `CLAUDE.md` a konvenciókkal (saját) · EF Core entitások és első migráció (AI, átnézve) · Identity cookie-auth egy felhasználóval (saját) · Testcontainers-fixture (AI) és egy integrációs teszt (saját) · architektúra-teszt · első két ADR (saját) | `dotnet run` az AppHoston elindítja a stacket; a CI zöld; bejelentkezés működik |
+| S1 | Váz, minőségi alapok | Solution-struktúra, `Directory.Build.props`, analyzerek, Central Package Management, `.editorconfig` (AI) · Aspire AppHost pgvectoros Postgresszel (AI) · GitHub Actions build, secret scanning, `.gitignore` (AI) · `CLAUDE.md` a konvenciókkal (saját) · EF Core entitások és első migráció, `IDomainPack` interfész és gyűjteménymezők (AI, átnézve) · Identity cookie-auth egy felhasználóval (saját) · Testcontainers-fixture (AI) és egy integrációs teszt (saját) · architektúra-teszt · első két ADR (saját) | `dotnet run` az AppHoston elindítja a stacket; a CI zöld; bejelentkezés működik |
 | S2 | Feltöltés és tárolás | Gyűjtemény-végpontok (saját) · streaming multipart feltöltés pufferelés nélkül (saját) · `IBlobStore` helyi implementáció, SHA-256 dedup (saját) · méretkorlát, tartalom alapú típusellenőrzés, útvonal-védelem (saját) · OpenAPI + Scalar (AI) · integrációs tesztek 1 GB-os fájlra is (saját) | Egy több száz MB-os PDF feltölthető állandó memóriahasználattal; duplikátum nem tárolódik kétszer |
 | S3 | DMS-funkciók és UI | Verziók, aktív verzió, címkék, `jsonb` metaadat, puha törlés, audit (saját) · kurzoros lapozás, ETag / `If-Match` (saját) · health check-ek, rate limiter (AI) · dokumentumlista és feltöltő nézet vanilla JS-ben (AI) · README első változata (AI vázlat, saját véglegesítés) · `SECURITY.md` első változata | A UI-on feltölthető, listázható, címkézhető, verziózható egy dokumentum; **a repó már bemutatható** |
 
@@ -32,9 +32,9 @@ A PdfPig-kockázat miatt itt a legnagyobb a szórás; ha az S5 minőségellenőr
 
 | Sprint | Cél | Feladatok | Kész, ha |
 | --- | --- | --- | --- |
-| S4 | Feladatsor és pipeline-váz | Worker Service projekt (AI váz) · `job`-sor a specifikáció állapotgépe szerint: `FOR UPDATE SKIP LOCKED`, bérlet, heartbeat, újrapróbálás, dead-letter, idempotencia, zombi Worker elleni védelem (saját) · egységes blokkmodell és az öt pipeline-interfész (saját) · `register` job, `run_id`, számláló (saját) · feldolgozási állapot SSE-n (saját) · tesztek: párhuzamos workerek, leállás közbeni job (saját) | Feltöltés után a job lefut, állapota a UI-on látszik; worker-leállítás után a job folytatódik |
+| S4 | Feladatsor és pipeline-váz | Worker Service projekt (AI váz) · `job`-sor a specifikáció állapotgépe szerint: `FOR UPDATE SKIP LOCKED`, bérlet, heartbeat, újrapróbálás, dead-letter, idempotencia, zombi Worker elleni védelem (saját) · egységes blokkmodell és az öt pipeline-interfész (saját) · `register` job, `run_id`, számláló, tervezett leállítás (saját) · `LISTEN/NOTIFY`: feldolgozási állapot az API-nak és SSE-n a felületnek, Worker-ébresztés (saját) · tesztek: párhuzamos workerek, leállás közbeni job (saját) | Feltöltés után a job lefut, állapota a UI-on látszik; worker-leállítás után a job folytatódik |
 | S5 | Kinyerés és osztályozás | PdfPig-kinyerés egy 50 oldalas mintán, minőségellenőrzés jegyzőkönyvvel (saját) · `classify_pages` C#-portja (AI) és kalibrálása 100–200 címkézett oldalon (saját) · `page`, `block`, `page_label` feltöltése; fejléc/lábléc felismerése (saját) · ADR a kinyerés minőségéről (saját) | Az osztályozó pontossága mérve a kézi címkéken; a rajzfeliratok koordinátákkal az adatbázisban |
-| S6 | Renderelés, darabolás, kódok | Oldalrenderelés PDFium-alapú könyvtárral (AI) · könyvjelző-alapú `IChunker` a modell maximális hosszán belül (saját) · Mazda-enricher regexei (AI) és tesztjei (AI, átnézve) · `section_link` (saját) · tömeges írás `COPY`-val (saját) · teljes kézikönyv feldolgozása, futásidő mérve (saját) | Mind a 13 000 oldal feldolgozva; chunkok, kódok, oldalképek a helyükön |
+| S6 | Renderelés, darabolás, kódok | Oldalrenderelés PDFium-alapú könyvtárral (AI) · könyvjelző-alapú `IChunker` a modell maximális hosszán belül (saját) · Mazda-enricher regexei az autós domain pack projektjében (AI) és tesztjei (AI, átnézve) · `section_link` (saját) · tömeges írás `COPY`-val (saját) · teljes kézikönyv feldolgozása, futásidő mérve (saját) | Mind a 13 000 oldal feldolgozva; chunkok, kódok, oldalképek a helyükön |
 
 ## M3: eval és lexikális keresés (S7–S8)
 
@@ -68,7 +68,7 @@ Ezeket az M5 lezárásakor érdemes részletezni, az addigi mérések és tapasz
 | Sprint | Mérföldkő | Fő tartalom |
 | --- | --- | --- |
 | S15–S16 | M6 – Ábrák | `get_page_image` régióval és kiemeléssel a feliratkoordináták alapján (saját) · `describe_figure` job vision-modellel, gyorsítótárral (bekötés: AI) · `render_diagram` önjavító hibaciklussal (saját) |
-| S17 | M7 – Járműkontextus | Járműprofil, szervizelőzmény megerősítéses írással (saját) · FORScan CSV-elemző (AI) |
+| S17 | M7 – Autós domain pack | Járműprofil, szervizelőzmény megerősítéses írással (saját) · FORScan CSV-elemző (AI) |
 | S18–S21 | M8 – Általános dokumentumok | Tesseract-alapú `IOcrEngine`, oldalankénti OCR vegyes PDF-re (saját) · képfájlok · DOCX/XLSX/HTML/EML-kinyerők (AI, átnézve) · címsor- és tokenszám-alapú chunker (saját) · nyelvfelismerés · eval vegyes dokumentumokra |
 | S22–S23 | M9 – Évkönyvek | Szkennelés/beszerzés, OCR-minőség mérése, magyar `ts_config`, gyűjteményválasztás az agentben |
 | S24+ | M10 – Bekötési gráf (opcionális) | Kutatás jellegű, 3–6 sprint; egyetlen rajzon kezdve, kézzel ellenőrzött bekötéssel mérve |
