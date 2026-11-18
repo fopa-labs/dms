@@ -293,7 +293,7 @@ RETURNING job.*;
 | Árva blobok takarítása | naponta | hivatkozás nélküli blobfájlok törlése türelmi idő után |
 | Árva oldalképek takarítása | naponta | törölt verziók `pages/` fájljainak törlése |
 
-Minden időszakos feladat egy Postgres advisory lockkal (`pg_try_advisory_lock`) indul: ha egy másik Worker-példány már tartja, ez a példány kihagyja a kört. Így több Worker esetén is egyszerre csak egy fut.
+Minden időszakos feladat egy tranzakción belül, tranzakciószintű advisory lockkal (`pg_try_advisory_xact_lock`) indul: ha egy másik Worker-példány már tartja, ez a példány kihagyja a kört. Így több Worker esetén is egyszerre csak egy fut. A zár a tranzakció végén (commit, rollback, kapcsolatszakadás) magától felszabadul; a munkamenet-szintű `pg_try_advisory_lock` poolozott kapcsolaton veszélyes, mert a kapcsolat a zárral együtt kerülne vissza a poolba.
 
 ### Értesítések (LISTEN/NOTIFY)
 
