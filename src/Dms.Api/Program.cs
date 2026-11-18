@@ -1,8 +1,13 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// OpenTelemetry, health checks, resilience and service discovery (Dms.ServiceDefaults).
+builder.AddServiceDefaults();
+
 var app = builder.Build();
 
-// Placeholder until the first real endpoint group; health checks come with ServiceDefaults.
+app.MapDefaultEndpoints();
+
+// Placeholder until the first real endpoint group.
 app.MapGet("/", () => "Dms.Api");
 
 await app.RunAsync();
