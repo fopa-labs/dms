@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: the workflow only reads the repository.
+permissions:
+  contents: read
+
+# A new push to the same branch or PR cancels the run that is still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # Third-party actions are pinned to a commit SHA (tag in the comment), so a moved tag cannot
+      # change what runs here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The SDK version comes from global.json, the same one used locally.
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      # Warnings are errors and code style is enforced at build time (Directory.Build.props),
+      # so this step is also the lint step.
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # Docker is available on ubuntu-latest, which the Testcontainers integration tests need.
+      - name: Test
+        run: dotnet test --configuration Release --no-build
