@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain model, interfaces and pure logic. References nothing else in the solution and no
+       infrastructure packages (enforced by Dms.ArchitectureTests). -->
+
+</Project>
