@@ -85,7 +85,7 @@ public interface IDomainPack
 - **Adatok:** a csomag saját PostgreSQL-sémában (`automotive.vehicle`, `automotive.service_log`), saját EF Core `DbContext`-tel és migrációval; az alapséma nem tud róla. A beszélgetéshez a csomag a `conversation.context` mezőn keresztül kapcsol adatot (pl. a kiválasztott jármű azonosítóját), idegen kulcs nélkül.
 - **Agent:** rendszerutasítás = általános rész + az aktuális gyűjtemény csomagjának része; eszközlista = általános eszközök + a csomag eszközei.
 - **Autós csomag:** DTC-, csatlakozó-, alkatrész- és nyomaték-enricher, Mazda-hivatkozásminták, diagnosztikai munkafolyamat és biztonsági figyelmeztetések, `vehicle_profile`, `log_service`, `parse_obd_log`, járműtáblák.
-- **Időzítés:** az interfész és a gyűjteménymezők az S1 sémájában; az enricherek az S6-ban már a csomagon át futnak; az agent-utasítás és az eszközlista összeállítása az M5-ben; a teljes autós csomag az M7-ben.
+- **Időzítés:** az interfész és a gyűjteménymezők az S1 sémájában, a `Tools` tulajdonság nélkül (az `IAgentTool` az M5-ben, az agent tool-use ciklusával együtt készül); az enricherek az S6-ban már a csomagon át futnak; az agent-utasítás és az eszközlista összeállítása az M5-ben; a teljes autós csomag az M7-ben.
 
 ## Adatmodell (PostgreSQL, EF Core)
 
