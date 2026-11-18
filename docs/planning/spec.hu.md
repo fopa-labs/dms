@@ -56,7 +56,7 @@ Minden komponens C#: az API kiszolgálja a DMS-t, a keresést és az agentet; a 
 
 A Postgres az egyetlen tár: a relációs adatok, a teljes szöveges index és a vektorok (pgvector) is itt vannak, ezért minden írás egy tranzakcióban történhet. A sémát EF Core migrációk kezelik. Minden azonosító UUID (v7, időrendezett).
 
-**Séma mérföldkövenként:** minden tábla abban a mérföldkőben jön létre, saját migrációval, amelyik először használja; így a később tervezett részek (feladatsor, blokkmodell, darabolás) szerkezetét nem rögzíti előre egy korai migráció. M0: `collection`, `document`, `document_version`, `tag`, `document_tag`, `audit_log` és az Identity-táblák, valamint a `vector` és `pg_trgm` bővítmény. M2: `job`, `page`, `page_label`, `block`, `chunk`, `chunk_code`, `section_link`. M3: `eval_case`, `eval_run`. M4: `chunk.embedding` és a HNSW-index. M5: `conversation`, `message`. M7: `vehicle`, `service_log`.
+**Séma mérföldkövenként:** minden tábla abban a mérföldkőben jön létre, saját migrációval, amelyik először használja; így a később tervezett részek (feladatsor, blokkmodell, darabolás) szerkezetét nem rögzíti előre egy korai migráció. M0: `collection`, `document`, `document_version`, `tag`, `document_tag`, `audit_log` és az Identity-táblák, valamint a `vector` és `pg_trgm` bővítmény. M2: `job`, `page`, `page_label`, `block`, `chunk`, `chunk_code`, `section_link`. M3: `eval_case`, `eval_run`. M4: `chunk.embedding` és a HNSW-index. M5: `conversation`, `message`. M7: `automotive.vehicle`, `automotive.service_log` az autós csomag saját migrációjával.
 
 | Tábla | Kulcsmezők | Megjegyzés |
 | --- | --- | --- |
