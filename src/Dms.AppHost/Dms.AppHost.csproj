@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- ASPIRE010: the Aspire CLI bundle is only needed for `aspire` CLI workflows; `dotnet run` on
+         this project starts the orchestrator and dashboard from the NuGet packages. -->
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+    <!-- Aspire stores the generated PostgreSQL password here (dotnet user-secrets), never in the repository. -->
+    <UserSecretsId>7fd07bf4-a8b2-4cf7-ba35-06fb45019806</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dms.Api\Dms.Api.csproj" />
+    <ProjectReference Include="..\Dms.MigrationService\Dms.MigrationService.csproj" />
+    <ProjectReference Include="..\Dms.Worker\Dms.Worker.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -78,6 +78,7 @@ src/
   Dms.Worker/             Worker Service: job queue and processing pipeline
   Dms.Core/               Domain model, interfaces, pure logic (no I/O dependencies)
   Dms.Infrastructure/     EF Core + pgvector, blob store, PDF, ONNX, LLM clients
+  Dms.MigrationService/   One-shot host: applies EF Core migrations, run by the AppHost before Api and Worker
   Packs/
     Dms.Packs.Automotive/ Automotive domain pack: enrichers, agent instructions and tools,
                           vehicle data in its own schema and DbContext
@@ -103,7 +104,8 @@ namespaces, assembly names or identifiers.
 - `Infrastructure` references `Core` only.
 - Domain packs (`src/Packs/*`) reference `Core` only; `Core` and `Infrastructure` never
   reference a pack.
-- `Api` and `Worker` reference `Core`, `Infrastructure` and `ServiceDefaults`.
+- `Api`, `Worker` and `MigrationService` reference `Core`, `Infrastructure` and `ServiceDefaults`.
+- `ServiceDefaults` references nothing else in the solution; `AppHost` references only the services it runs.
 - `Api` and `Worker` never reference each other; they communicate through the database (`job` table).
 
 ## Coding conventions

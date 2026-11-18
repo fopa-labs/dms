@@ -1,8 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Dms.Api/Dms.Api.csproj" />
+    <Project Path="src/Dms.AppHost/Dms.AppHost.csproj" />
     <Project Path="src/Dms.Core/Dms.Core.csproj" />
     <Project Path="src/Dms.Infrastructure/Dms.Infrastructure.csproj" />
+    <Project Path="src/Dms.MigrationService/Dms.MigrationService.csproj" />
+    <Project Path="src/Dms.ServiceDefaults/Dms.ServiceDefaults.csproj" />
     <Project Path="src/Dms.Worker/Dms.Worker.csproj" />
   </Folder>
   <Folder Name="/src/Packs/">

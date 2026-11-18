@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <!-- One-shot host: applies the EF Core migrations, then exits. The AppHost starts Api and Worker
+       only after it has completed successfully. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dms.Core\Dms.Core.csproj" />
+    <ProjectReference Include="..\Dms.Infrastructure\Dms.Infrastructure.csproj" />
+    <ProjectReference Include="..\Dms.ServiceDefaults\Dms.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

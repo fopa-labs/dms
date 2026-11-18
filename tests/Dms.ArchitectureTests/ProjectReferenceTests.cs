@@ -12,6 +12,10 @@ public class ProjectReferenceTests
 {
     private const string Core = "Dms.Core";
     private const string Infrastructure = "Dms.Infrastructure";
+    private const string ServiceDefaults = "Dms.ServiceDefaults";
+    private const string Api = "Dms.Api";
+    private const string Worker = "Dms.Worker";
+    private const string MigrationService = "Dms.MigrationService";
 
     // Every project under src/ and the exact set of solution projects it may reference.
     // Domain packs are matched by the "Dms.Packs." prefix (see AllowedReferences).
@@ -19,8 +23,12 @@ public class ProjectReferenceTests
     {
         [Core] = [],
         [Infrastructure] = [Core],
-        ["Dms.Api"] = [Core, Infrastructure],
-        ["Dms.Worker"] = [Core, Infrastructure],
+        [ServiceDefaults] = [],
+        [Api] = [Core, Infrastructure, ServiceDefaults],
+        [Worker] = [Core, Infrastructure, ServiceDefaults],
+        [MigrationService] = [Core, Infrastructure, ServiceDefaults],
+        // The AppHost references the services it runs (as Aspire resources, not as libraries).
+        ["Dms.AppHost"] = [Api, Worker, MigrationService],
     };
 
     public static TheoryData<string> SourceProjects() =>
